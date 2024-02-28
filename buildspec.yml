@@ -3,6 +3,6 @@ phases:
   pre_build:
     commands:
       - echo "Running kubelinter for Kubernetes configuration checks..."
-      - wget -O kubelinter https://github.com/stackrox/kube-linter/releases/download/v0.6.8/kube-linter-linux
-      - chmod +x kubelinter
-      - kube-linter lint -o kubernetes springboot.yaml
+      - wget -O kube-linter https://github.com/stackrox/kube-linter/releases/download/v0.6.8/kube-linter-linux
+      - chmod +x kube-linter
+      - ./kube-linter lint -o kubernetes springboot.yaml
