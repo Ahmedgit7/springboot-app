@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: my-springboot-app
-        image: 637423318618.dkr.ecr.ap-south-1.amazonaws.com/weatherapp
+        image: 637423318618.dkr.ecr.ap-south-1.amazonaws.com/weatherapp:build-509d0b3c-ee9c-42b9-b3dd-c69ca1bb988b
         imagePullPolicy: Always
         ports:
         - containerPort: 8085
