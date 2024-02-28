@@ -1,5 +1,5 @@
-version: 0.2  
-env: 
+version: 0.2
+env:
   secrets-manager:
     username: testing/sonar:username
     token: testing/sonar:token
@@ -8,27 +8,29 @@ env:
 phases:
   pre_build:
     commands:
-      - echo installing dependencies
+      - echo "Installing dependencies"
       - chmod +x ./scripts/awscli.sh
       - chmod +x ./scripts/eksctl.sh
       - chmod +x ./scripts/kubectl.sh
       - ./scripts/awscli.sh
       - ./scripts/eksctl.sh
       - ./scripts/kubectl.sh
-      - echo Logging in to Amazon ECR...
+      - echo "Logging in to Amazon ECR..."
       - aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin 185633157927.dkr.ecr.ap-south-1.amazonaws.com
+
   build:
     commands:
-      - echo Building Docker image...
+      - echo "Building Docker image..."
       - docker login -u $username -p $token
-      - echo login success
+      - echo "Login success"
       - docker build -t varthana1 .
+
   post_build:
     commands:
-      - echo Pushing Docker image to Amazon ECR...
+      - echo "Pushing Docker image to Amazon ECR..."
       - docker tag varthana1:latest 185633157927.dkr.ecr.ap-south-1.amazonaws.com/varthana:latest
       - docker push 185633157927.dkr.ecr.ap-south-1.amazonaws.com/varthana:latest
-      - echo updating kubeconfig 
+      - echo "Updating kubeconfig"
       - CREDENTIALS=$(aws sts assume-role --role-arn "$EKS" --role-session-name codebuild-kubectl --duration-seconds 900)
       - export AWS_ACCESS_KEY_ID="$(echo ${CREDENTIALS} | jq -r '.Credentials.AccessKeyId')"
       - export AWS_SECRET_ACCESS_KEY="$(echo ${CREDENTIALS} | jq -r '.Credentials.SecretAccessKey')"
@@ -38,17 +40,25 @@ phases:
       - echo $AWS_SECRET_ACCESS_KEY
       - echo $AWS_SESSION_TOKEN
       - echo $AWS_EXPIRATION
-    
-      # - export AWS_ACCESS_KEY_ID=S{access_key}
-      # - export AWS_SECRET_ACCESS_KEY=${secret_key}
-      # Setup kubectl with our EKS Cluster            
-      - echo "Update Kube Config"      
+
+      - echo "Updating Kube Config"
       - aws eks update-kubeconfig --name $EKS_CLUSTER_NAME
-      # Apply changes to our Application using kubectl
-      - echo "Apply changes to kube manifests"
-      - chmod +x springboot.yaml               
+      - echo "Applying changes to kube manifests"
+      - chmod +x springboot.yaml
       - kubectl apply -f springboot.yaml
       - chmod +x ./scripts/helm.sh
-      - ./scripts/helm.sh
 
+      # Integrate security testing tools
+      - echo "Running Synk for dependency scanning..."
+      - npm install -g snyk
+      - snyk test --all-projects --fail-on=upgrade
 
+      - echo "Running Hadolint for Dockerfile linting..."
+      - wget -O /usr/bin/hadolint https://github.com/hadolint/hadolint/releases/download/v2.7.0/hadolint-Linux-x86_64
+      - chmod +x /usr/bin/hadolint
+      - hadolint Dockerfile
+
+      - echo "Running kubelinter for Kubernetes configuration checks..."
+      - wget -O kubelinter https://github.com/stackrox/kube-linter/releases/download/v0.3.0/kube-linter-linux-amd64
+      - chmod +x kubelinter
+      - kubelinter lint -o kubernetes springboot.yaml
