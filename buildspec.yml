@@ -5,4 +5,4 @@ phases:
       - echo "Running kubelinter for Kubernetes configuration checks..."
       - wget -O kube-linter https://github.com/stackrox/kube-linter/releases/download/v0.6.8/kube-linter-linux
       - chmod +x kube-linter
-      - ./kube-linter lint springboot.yaml
+      - ./kube-linter lint eks-deploy-k8s.yaml
