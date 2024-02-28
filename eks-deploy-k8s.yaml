@@ -14,6 +14,16 @@ spec:
       labels:
         app: springboot-app
     spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+          - labelSelector:
+              matchExpressions:
+              - key: app
+                operator: In
+                values:
+                - springboot-app
+            topologyKey: "kubernetes.io/hostname"
       containers:
       - name: my-springboot-app
         image: 637423318618.dkr.ecr.ap-south-1.amazonaws.com/weatherapp:build-509d0b3c-ee9c-42b9-b3dd-c69ca1bb988b
@@ -22,7 +32,16 @@ spec:
         - containerPort: 8085
           name: http
           protocol: TCP
-# service type loadbalancer       
+        securityContext:
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+        resources:
+          requests:
+            cpu: "100m"  # Modify CPU request based on your application's requirements
+            memory: "128Mi"  # Modify memory request based on your application's requirements
+          limits:
+            cpu: "500m"  # Modify CPU limit based on your application's requirements
+            memory: "256Mi"  # Modify memory limit based on your application's requirements
 ---
 apiVersion: v1
 kind: Service
